@@ -2,16 +2,108 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ghj的在线页面</title>
-    <link rel="stylesheet" href="styles.css">
+    <script src="phaser.min.js"></script>
 </head>
 <body>
-<div id="game-container">
-    <div id="player"></div>
-    <div class="obstacle"></div>
-</div>
+<script>
+    // Phaser 游戏配置
+    var config = {
+        type: Phaser.AUTO,
+        width: window.innerWidth, // 使用窗口的宽度
+        height: window.innerHeight, // 使用窗口的高度
+        physics: {
+            default: 'arcade',
+            arcade: {
+                gravity: { y: 0 }, // 禁用重力
+            }
+        },
+        scene: {
+            preload: preload,
+            create: create,
+            update: update
+        }
+    };
 
-<script src="script.js"></script>
+    var game = new Phaser.Game(config);
+    var player;
+    var obstacles;
+
+    function preload() {
+        // 加载玩家和障碍物的图像
+        this.load.image('player', 'assets/player.png');
+        this.load.image('obstacle', 'assets/obstacle.png');
+    }
+
+    function create() {
+        // 创建玩家
+        //player = this.physics.add.sprite(400, 550, 'player').setScale(0.5);
+        player = this.physics.add.sprite(400, 300, 'player').setScale(0.5);
+
+        // 创建障碍物组
+        obstacles = this.physics.add.group();
+
+        // 创建三条跑道
+        for (var i = 0; i < 3; i++) {
+            var x = 200 + i * 200;
+            this.add.rectangle(x, 0, 10, 600, 0xffffff);
+        }
+
+        // 设置玩家不会超出屏幕
+        player.setCollideWorldBounds(true);
+
+        // 每隔一段时间生成障碍物
+        this.time.addEvent({
+            delay: 1500,
+            loop: true,
+            callback: generateObstacle,
+            callbackScope: this
+        });
+    }
+
+    function update() {
+        // 玩家控制（这里可以根据需要添加控制逻辑）
+        if (game.input.activePointer.isDown) {
+            player.x = game.input.activePointer.x;
+        }
+
+        // 障碍物移动
+        obstacles.getChildren().forEach(function(obstacle) {
+            obstacle.y += 5; // 调整移动速度
+            // 如果障碍物超出屏幕，销毁它
+            if (obstacle.y > 600) {
+                obstacle.destroy();
+            }
+        });
+
+        // 碰撞检测
+        this.physics.world.overlap(player, obstacles, gameOver, null, this);
+    }
+
+    function generateObstacle() {
+        var lane = Phaser.Math.Between(0, 2); // 随机选择一个跑道
+        var x = 200 + lane * 200;
+        var obstacle = obstacles.create(x, -50, 'obstacle');
+        obstacle.setVelocityY(Phaser.Math.Between(100, 200)); // 障碍物的下落速度
+    }
+    /***
+    function gameOver() {
+        // 游戏结束逻辑，例如显示分数、重新开始等
+        alert('游戏结束！');
+        // 可以添加其他逻辑，比如重新开始游戏
+        location.reload();
+    }
+    **/
+
+    function gameOver() {
+        alert('游戏结束！');
+        player.setVelocity(0); // 停止玩家移动
+        player.setX(400); // 将玩家放置到屏幕中央的 x 坐标
+        player.setY(300); // 将玩家放置到屏幕中央的 y 坐标
+        location.reload(); // 重新加载页面
+    }
+
+</script>
 </body>
 </html>
