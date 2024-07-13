@@ -1,0 +1,45 @@
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* 隐藏页面的滚动条 */
+    background-color: #87CEEB; /* 设置背景颜色为天蓝色 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+#game-container {
+    width: 100%; /* 宽度100%，占据整个视口 */
+    max-width: 600px; /* 最大宽度600px，适应移动设备 */
+    height: 80vh; /* 固定高度，适应移动设备 */
+    position: relative;
+    background-color: #fff; /* 设置游戏区域背景为白色 */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); /* 添加阴影效果 */
+}
+
+#player {
+    width: 50px;
+    height: 50px;
+    background-color: red; /* 玩家方块的颜色 */
+    position: absolute;
+    bottom: 10px; /* 玩家方块初始位置在底部 */
+    left: 50%; /* 水平居中 */
+    transform: translateX(-50%); /* 使方块在水平方向上居中 */
+}
+
+.obstacle {
+    width: 50px;
+    height: 50px;
+    background-color: green; /* 障碍物的颜色 */
+    position: absolute;
+    bottom: 70px; /* 障碍物初始位置在底部 */
+    left: 20%; /* 左侧放置障碍物 */
+}
+
+@media (max-width: 600px) {
+    #player, .obstacle {
+        width: 30px;
+        height: 30px;
+    }
+}
