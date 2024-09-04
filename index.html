@@ -2,108 +2,108 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ghj的在线页面</title>
-    <script src="phaser.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.2/xlsx.full.min.js"></script>
+    <title>读取 Excel 文件</title>
+    <style>
+        #controls {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+    </style>
 </head>
 <body>
+<input type="file" id="fileInput" />
+<table id="dataTable" border="1">
+    <thead>
+    <tr>
+        <th>序号</th>
+        <th>类型</th>
+        <th>类别</th>
+        <th>题目</th>
+        <th>选项</th>
+        <th>答案</th>
+    </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<div id="controls">
+    <button id="prevBtn" onclick="prevQuestion()">上一题</button>
+    <button id="nextBtn" onclick="nextQuestion()">下一题</button>
+</div>
+
 <script>
-    // Phaser 游戏配置
-    var config = {
-        type: Phaser.AUTO,
-        width: window.innerWidth, // 使用窗口的宽度
-        height: window.innerHeight, // 使用窗口的高度
-        physics: {
-            default: 'arcade',
-            arcade: {
-                gravity: { y: 0 }, // 禁用重力
-            }
-        },
-        scene: {
-            preload: preload,
-            create: create,
-            update: update
+    const fileName = '安全知识题库.xlsx';
+    let dataRows = [];
+    let currentIndex = 1;
+
+    document.getElementById('fileInput').addEventListener('change', handleFile, false);
+
+    function handleFile(event) {
+        const file = event.target.files[0];
+        if (file.name !== fileName) {
+            alert('请选择正确的文件: ' + fileName);
+            return;
         }
-    };
 
-    var game = new Phaser.Game(config);
-    var player;
-    var obstacles;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const data = new Uint8Array(event.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            dataRows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-    function preload() {
-        // 加载玩家和障碍物的图像
-        this.load.image('player', 'assets/player.png');
-        this.load.image('obstacle', 'assets/obstacle.png');
+            displayQuestion(currentIndex);
+            localStorage.setItem('cachedData', JSON.stringify(dataRows));
+        };
+
+        reader.readAsArrayBuffer(file);
     }
 
-    function create() {
-        // 创建玩家
-        //player = this.physics.add.sprite(400, 550, 'player').setScale(0.5);
-        player = this.physics.add.sprite(400, 300, 'player').setScale(0.5);
+    function displayQuestion(index) {
+        if (index < 1 || index >= dataRows.length) return;
 
-        // 创建障碍物组
-        obstacles = this.physics.add.group();
+        const tbody = document.querySelector('#dataTable tbody');
+        tbody.innerHTML = '';
 
-        // 创建三条跑道
-        for (var i = 0; i < 3; i++) {
-            var x = 200 + i * 200;
-            this.add.rectangle(x, 0, 10, 600, 0xffffff);
-        }
+        const row = dataRows[index];
+        if (!row) return;
 
-        // 设置玩家不会超出屏幕
-        player.setCollideWorldBounds(true);
-
-        // 每隔一段时间生成障碍物
-        this.time.addEvent({
-            delay: 1500,
-            loop: true,
-            callback: generateObstacle,
-            callbackScope: this
+        const tr = document.createElement('tr');
+        row.forEach(cell => {
+            const td = document.createElement('td');
+            td.textContent = cell;
+            tr.appendChild(td);
         });
+        tbody.appendChild(tr);
     }
 
-    function update() {
-        // 玩家控制（这里可以根据需要添加控制逻辑）
-        if (game.input.activePointer.isDown) {
-            player.x = game.input.activePointer.x;
+    function prevQuestion() {
+        if (currentIndex > 1) {
+            currentIndex--;
+            displayQuestion(currentIndex);
         }
-
-        // 障碍物移动
-        obstacles.getChildren().forEach(function(obstacle) {
-            obstacle.y += 5; // 调整移动速度
-            // 如果障碍物超出屏幕，销毁它
-            if (obstacle.y > 600) {
-                obstacle.destroy();
-            }
-        });
-
-        // 碰撞检测
-        this.physics.world.overlap(player, obstacles, gameOver, null, this);
     }
 
-    function generateObstacle() {
-        var lane = Phaser.Math.Between(0, 2); // 随机选择一个跑道
-        var x = 200 + lane * 200;
-        var obstacle = obstacles.create(x, -50, 'obstacle');
-        obstacle.setVelocityY(Phaser.Math.Between(100, 200)); // 障碍物的下落速度
-    }
-    /***
-    function gameOver() {
-        // 游戏结束逻辑，例如显示分数、重新开始等
-        alert('游戏结束！');
-        // 可以添加其他逻辑，比如重新开始游戏
-        location.reload();
-    }
-    **/
-
-    function gameOver() {
-        alert('游戏结束！');
-        player.setVelocity(0); // 停止玩家移动
-        player.setX(400); // 将玩家放置到屏幕中央的 x 坐标
-        player.setY(300); // 将玩家放置到屏幕中央的 y 坐标
-        location.reload(); // 重新加载页面
+    function nextQuestion() {
+        if (currentIndex < dataRows.length - 1) {
+            currentIndex++;
+            displayQuestion(currentIndex);
+        }
     }
 
+    function loadCachedData() {
+        const cachedData = localStorage.getItem('cachedData');
+        if (cachedData) {
+            dataRows = JSON.parse(cachedData);
+            displayQuestion(currentIndex);
+        }
+    }
+
+    window.onload = loadCachedData;
 </script>
 </body>
 </html>
