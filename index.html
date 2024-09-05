@@ -70,11 +70,16 @@
     <button id="prevBtn" onclick="prevQuestion()">上一题</button>
     <button id="nextBtn" onclick="nextQuestion()">下一题</button>
 </div>
-
+<!-- 1.底部按钮: 添加了一个 #bottomControls 容器，包含一个“浏览所有行”按钮，固定在页面底部。q -->
+<div id="bottomControls">
+    <button id="browseBtn" onclick="browseAll()">浏览所有行</button>
+</div>
 <script>
     const fileName = '安全知识题库.xlsx'; // 期望的文件名
     let dataRows = []; // 存储 Excel 数据的数组
-    let currentIndex = 1; // 当前显示的行索引
+    //let currentIndex = 1; // 当前显示的行索引
+    let currentIndex = parseInt(localStorage.getItem('currentIndex')) || 1;//缓存索引行
+
 
     // 处理文件输入变化事件
     document.getElementById('fileInput').addEventListener('change', handleFile, false);
@@ -97,10 +102,67 @@
 
             displayQuestion(currentIndex); // 显示当前问题
             localStorage.setItem('cachedData', JSON.stringify(dataRows)); // 缓存数据
+            localStorage.setItem('currentIndex', currentIndex);//缓存索引行
         };
 
         reader.readAsArrayBuffer(file);
     }
+    function displayQuestion(index) {
+        // 验证索引是否在有效范围内
+        if (index < 1 || index >= dataRows.length) return;
+
+        // 获取表格的 tbody 元素
+        const tbody = document.querySelector('#dataTable tbody');
+        tbody.innerHTML = ''; // 清空现有内容
+
+        // 获取指定索引的数据行
+        const row = dataRows[index];
+        if (!row) return;
+
+        // 创建两个新的表格行
+        const tr1 = document.createElement('tr');
+        const tr2 = document.createElement('tr');
+        const tr3 = document.createElement('tr');
+        // 定义要显示的列索引（例如：序号 = 0, 题目 = 1, 选项 = 2）
+        const columnsToShow = [0, 1, 3, 4, 5];
+
+        // 遍历需要显示的列索引
+        columnsToShow.forEach(colIndex => {
+            const td = document.createElement('td'); // 创建新的表格单元格
+            let content = row[colIndex] || ''; // 获取单元格内容，如果内容为空则设置为 ''
+
+            if (colIndex === 4 || colIndex === 5) {
+                content = content.replace(/\n/g, '<br>'); // 将换行符转换为 HTML 换行标签
+
+                if (colIndex === 4) {
+                    // 将选项用 '|' 分隔，并用字母标记
+                    content = content.split('|').map((option, idx) =>
+                        `<div>${String.fromCharCode(97 + idx)}) ${option}</div>`
+                    ).join('');
+                }
+                td.innerHTML = content; // 设置单元格的 HTML 内容
+            } else {
+                td.textContent = content; // 设置单元格的文本内容
+            }
+
+            // 根据列索引决定添加到哪个行
+            if (colIndex === 0 || colIndex === 1 || colIndex === 3) {
+                tr1.appendChild(td); // 将单元格添加到第一个表格行中
+            }
+            else if(colIndex === 4){
+                tr2.appendChild(td); // 将单元格添加到第二个表格行中
+            }else if(colIndex === 5){
+                tr3.appendChild(td); // 将单元格添加到第二个表格行中
+            }
+        });
+
+        // 将处理后的两个行添加到表格的 tbody 中
+        tbody.appendChild(tr1);
+        tbody.appendChild(tr2);
+        tbody.appendChild(tr3);
+    }
+
+    /*
     function displayQuestion(index) {
         // 验证索引是否在有效范围内
         if (index < 1 || index >= dataRows.length) return;
@@ -124,6 +186,13 @@
             const td = document.createElement('td'); // 创建新的表格单元格
             let content = row[colIndex] || ''; // 获取单元格内容，如果内容为空则设置为 ''
 
+
+
+
+
+            tr.appendChild(td); // 将单元格添加到行中
+            // 创建一个新的表格行
+            const tr = document.createElement('tr');
             if (colIndex === 4 || colIndex === 5) {
                 // 对第四列和第五列进行换行处理
                 content = content.replace(/\n/g, '<br>'); // 将换行符转换为 HTML 换行标签
@@ -136,16 +205,13 @@
                     ).join('');
                 }
                 td.innerHTML = content; // 设置单元格的 HTML 内容
-            } else {
-                td.textContent = content; // 设置单元格的文本内容
             }
-
             tr.appendChild(td); // 将单元格添加到行中
         });
-
+        td.textContent = content; // 设置单元格的文本内容
         tbody.appendChild(tr); // 将处理后的行添加到表格的 tbody 中
     }
-
+    */
 
 
     // 将处理后的行添加到表格的 tbody 中
@@ -195,16 +261,36 @@
             displayQuestion(currentIndex);
         }
     }
+    function browseAll() {
+        const index = prompt('请输入要浏览的行索引 (从 1 开始):');
+        const rowIndex = parseInt(index);
 
+        if (!isNaN(rowIndex) && rowIndex >= 1 && rowIndex < dataRows.length) {
+            currentIndex = rowIndex;
+            displayQuestion(currentIndex);
+        } else {
+            alert('无效的索引，请输入有效的行索引。');
+        }
+    }
     // 加载缓存的数据
     function loadCachedData() {
         const cachedData = localStorage.getItem('cachedData');
         if (cachedData) {
             dataRows = JSON.parse(cachedData);
+            currentIndex = parseInt(localStorage.getItem('currentIndex')) || 1;
             displayQuestion(currentIndex);
         }
     }
+    function saveCurrentIndex() {
+        localStorage.setItem('currentIndex', currentIndex);
+    }
+    // 登录时从 localStorage 读取索引
+    document.addEventListener('DOMContentLoaded', () => {
+        displayQuestion(currentIndex);
+    });
 
+    // 页面卸载时将当前索引保存到 localStorage
+    window.addEventListener('beforeunload', saveCurrentIndex);
     window.onload = loadCachedData; // 页面加载时加载缓存数据
 </script>
 </body>
