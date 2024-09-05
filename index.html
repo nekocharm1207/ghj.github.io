@@ -125,7 +125,8 @@
         const tr3 = document.createElement('tr');
         // 定义要显示的列索引（例如：序号 = 0, 题目 = 1, 选项 = 2）
         const columnsToShow = [0, 1, 3, 4, 5];
-
+        // 变量来标记是否已经添加了 colSpan
+        let colspanAdded = false;
         // 遍历需要显示的列索引
         columnsToShow.forEach(colIndex => {
             const td = document.createElement('td'); // 创建新的表格单元格
@@ -150,9 +151,23 @@
                 tr1.appendChild(td); // 将单元格添加到第一个表格行中
             }
             else if(colIndex === 4){
-                tr2.appendChild(td); // 将单元格添加到第二个表格行中
+                //tr2.appendChild(td); // 将单元格添加到第二个表格行中
+                if (!colspanAdded) {
+                    const tdColspan = document.createElement('td');
+                    tdColspan.setAttribute('colspan', '4'); // 设置 colSpan 为 3
+                    tdColspan.style.textAlign = 'center'; // 使用 CSS 来居中内容
+                    tdColspan.innerHTML = content;
+                    tr2.appendChild(tdColspan);
+                    colspanAdded = true;
+                }
             }else if(colIndex === 5){
-                tr3.appendChild(td); // 将单元格添加到第二个表格行中
+                //tr3.appendChild(td); // 将单元格添加到第二个表格行中
+                const tdColspan = document.createElement('td');
+                tdColspan.setAttribute('colspan', '4'); // 设置 colSpan 为 3
+                tdColspan.style.textAlign = 'center'; // 使用 CSS 来居中内容
+                tdColspan.innerHTML = content;
+                tr2.appendChild(tdColspan);
+                colspanAdded = true;
             }
         });
 
