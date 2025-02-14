@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .timetable {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        .timetable th, .timetable td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+            vertical-align: top;
+        }
+        .week-selector {
+            margin: 20px;
+            padding: 8px;
+            font-size: 16px;
+        }
+        .course-item {
+            margin: 4px;
+            padding: 6px;
+            background: #f0f8ff;
+            border-radius: 4px;
+        }
+        .highlight { color: #ff4444; }
+    </style>
+</head>
+<body>
+    <select id="weekSelector" class="week-selector">
+        <option value="0">请选择周数</option>
+        <!-- 选项将通过JavaScript自动生成 -->
+    </select>
+
+    <table class="timetable" id="courseTable">
+        <!-- 表格内容将通过JavaScript生成 -->
+    </table>
+
+<script>
+// 课程数据（根据提供的数据整理）
+const courses = [
+    // 星期一
+    { day: 1, section: "1-2", name: "概率论与数理统计", classroom: "A4N403", teacher: "沈仙华", weeks: [5,6,7,8,11,12,13,14,15,16] },
+    { day: 1, section: "3-4", name: "数据结构", classroom: "A4N207", teacher: "闵芳", weeks: [1,2,3,4,5,6,7] },
+    { day: 1, section: "3-4", name: "㊣数据结构", classroom: "A4N111", teacher: "闵芳", weeks: [8,9,10] },
+    { day: 1, section: "3-4", name: "数据结构", classroom: "A4N105", teacher: "闵芳", weeks: [11,12] },
+    { day: 1, section: "5-6", name: "职场英语", classroom: "A4S104", teacher: "张磊", weeks: [1,2,3,4,5,6,7,8,11,12,13,14,15,16,17,18] },
+    { day: 1, section: "7-8", name: "㊣J2EE体系结构及程序设计", classroom: "机房7", teacher: "吴怀琴", weeks: [5,6,7,8,9,10,11,12,13,14,15,16] },
+    { day: 1, section: "7-8", name: "概率论与数理统计", classroom: "A4N304", teacher: "沈仙华", weeks: [17] },
+    { day: 1, section: "9-10", name: "概率论与数理统计", classroom: "A4N303", teacher: "沈仙华", weeks: [12] },
+
+    // 星期二
+    { day: 2, section: "1-2", name: "JAVA语言", classroom: "A1N307", teacher: "杨璐", weeks: [1,2,3,4,5,6,7] },
+    { day: 2, section: "3-4", name: "JAVA语言", classroom: "A1N105", teacher: "杨璐", weeks: [1,2,3,4,5,6,7] },
+    { day: 2, section: "5-6", name: "计算机网络原理", classroom: "A4N112", teacher: "张雪江", weeks: [4,5,6,7,8,11,12,13,14,15] },
+
+    // 星期三
+    { day: 3, section: "1-2", name: "马克思主义基本原理", classroom: "A1N415", teacher: "赵俭", weeks: [11,12,13,14,15,16] },
+    { day: 3, section: "1-2", name: "㊣体质与健康二", classroom: "", teacher: "", weeks: [2,3,4,5,6,7,8,9] },
+    { day: 3, section: "3-4", name: "概率论与数理统计", classroom: "A4N304", teacher: "沈仙华", weeks: [18] },
+
+    // 星期四
+    { day: 4, section: "1-2", name: "JAVA语言", classroom: "A1N105", teacher: "杨璐", weeks: [1,2,3,4,5,6,7] },
+    { day: 4, section: "1-2", name: "概率论与数理统计", classroom: "A4N301", teacher: "沈仙华", weeks: [11] },
+    { day: 4, section: "3-4", name: "㊣J2EE体系结构及程序设计", classroom: "机房1", teacher: "吴怀琴", weeks: [5,6,7,8,9,10,11,12,13,14,15,16] },
+    { day: 4, section: "5-6", name: "计算机网络原理", classroom: "A4N206", teacher: "张雪江", weeks: [4,5,6,7,8,11,12,13,14,15] },
+
+    // 星期五
+    { day: 5, section: "1-2", name: "㊣数据结构", classroom: "A4S202", teacher: "闵芳", weeks: [1,2,3,4,5,6,7,8,9,10,11,12] },
+    { day: 5, section: "1-2", name: "马克思主义基本原理", classroom: "A4N203", teacher: "赵俭", weeks: [13,14,15,16] },
+    { day: 5, section: "3-4", name: "马克思主义基本原理", classroom: "A4N304", teacher: "赵俭", weeks: [5,6,7,8,11,12] },
+    { day: 5, section: "5-6", name: "马克思主义基本原理", classroom: "A4S404", teacher: "赵俭", weeks: [1,2,3,4] },
+    { day: 5, section: "5-6", name: "概率论与数理统计", classroom: "A4N304", teacher: "沈仙华", weeks: [5,6,7,8] },
+    { day: 5, section: "7-8", name: "数据库原理", classroom: "A4S117", teacher: "李莹", weeks: [11,12,13,14,15,16,17] }
+];
+
+// 初始化周数选择器
+function initWeekSelector() {
+    const selector = document.getElementById('weekSelector');
+    for(let i=1; i<=18; i++) {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = `第${i}周`;
+        selector.appendChild(option);
+    }
+}
+
+// 创建课程表
+function createTimetable() {
+    const table = document.getElementById('courseTable');
+    // 创建表头
+    const headerRow = table.insertRow();
+    ['时间', '星期一', '星期二', '星期三', '星期四', '星期五'].forEach(text => {
+        const th = document.createElement('th');
+        th.textContent = text;
+        headerRow.appendChild(th);
+    });
+
+    // 创建课程行（根据数据中的时间段）
+    const sections = ["1-2", "3-4", "5-6", "7-8", "9-10"];
+    sections.forEach(section => {
+        const row = table.insertRow();
+        row.insertCell().textContent = `${section}节`;
+        for(let day=1; day<=5; day++) {
+            const cell = row.insertCell();
+            cell.dataset.day = day;
+            cell.dataset.section = section;
+        }
+    });
+}
+
+// 更新课程显示
+function updateCourses(selectedWeek) {
+    document.querySelectorAll('td[data-day]').forEach(cell => {
+        cell.innerHTML = '';
+        const day = parseInt(cell.dataset.day);
+        const section = cell.dataset.section;
+        
+        // 查找匹配的课程
+        courses.filter(c => c.day === day && c.section === section)
+            .forEach(course => {
+                if(course.weeks.includes(parseInt(selectedWeek))) {
+                    const div = document.createElement('div');
+                    div.className = 'course-item';
+                    div.innerHTML = `
+                        <div>${course.name}</div>
+                        <div>${course.classroom}</div>
+                        <div>${course.teacher}</div>
+                    `;
+                    cell.appendChild(div);
+                }
+            });
+    });
+}
+
+// 初始化
+window.onload = function() {
+    initWeekSelector();
+    createTimetable();
+    
+    document.getElementById('weekSelector').addEventListener('change', function() {
+        updateCourses(this.value);
+    });
+};
+</script>
+</body>
+</html>
